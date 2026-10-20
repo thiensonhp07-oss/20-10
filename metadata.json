@@ -1,0 +1,6 @@
+{
+  "name": "Élégance 20·10 — Tôn Vinh Phụ Nữ Việt Nam",
+  "description": "Template giao diện cao cấp kỷ niệm Ngày Phụ nữ Việt Nam 20/10 với tone màu pastel sang trọng, nghệ thuật cắm hoa tinh tế và thiệp chúc tương tác.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
