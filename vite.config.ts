@@ -3,13 +3,14 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ command, mode }) => {
+  const isProduction = command === 'build' || mode === 'production';
   return {
-    base: './',
+    base: process.env.BASE_URL || (isProduction ? '/20-10/' : '/'),
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     server: {
