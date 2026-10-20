@@ -804,15 +804,15 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
               />
 
               {/* Widescreen HD badge */}
-              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 text-white text-[10px] tracking-wider font-mono backdrop-blur-md border border-white/10 select-none">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>60 FPS · Khung Ngang 16:9 · Cartoon</span>
+              <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/65 text-white text-[10px] tracking-wider font-mono backdrop-blur-md border border-white/10 select-none">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{aspectRatio === '16:9' ? '16:9 HD' : aspectRatio === '9:16' ? '9:16 Story' : '1:1 Vuông'}</span>
               </div>
 
               {/* Story tag */}
-              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 text-white/90 text-[10px] font-medium backdrop-blur-md border border-white/10 flex items-center gap-1">
+              <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/65 text-white/90 text-[10px] font-medium backdrop-blur-md border border-white/10 flex items-center gap-1 select-none">
                 <span>{currentTemplate.icon}</span>
-                <span>{currentTemplate.name}</span>
+                <span className="hidden xs:inline sm:inline truncate max-w-[130px]">{currentTemplate.name}</span>
               </div>
 
               {/* Overlay Play Button when paused */}

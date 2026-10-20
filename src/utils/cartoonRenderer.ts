@@ -92,7 +92,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
-// Comic Speech Bubble Drawer
+// Comic Speech Bubble Drawer with multi-line auto-wrap and collision avoidance
 function drawSpeechBubble(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -101,22 +101,45 @@ function drawSpeechBubble(
   isLeftPointer: boolean,
   alpha = 1
 ) {
+  if (alpha <= 0.01) return;
   ctx.save();
   ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
 
   ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
-  const textW = ctx.measureText(text).width;
-  const bubbleW = textW + 28;
-  const bubbleH = 34;
-  const bx = isLeftPointer ? x - 15 : x - bubbleW + 15;
-  const by = y - bubbleH - 12;
+  const maxBubbleW = 230;
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let curLine = '';
 
-  // Shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.2)';
-  ctx.shadowBlur = 8;
+  for (let i = 0; i < words.length; i++) {
+    const test = curLine ? `${curLine} ${words[i]}` : words[i];
+    if (ctx.measureText(test).width > maxBubbleW - 28 && curLine) {
+      lines.push(curLine);
+      curLine = words[i];
+    } else {
+      curLine = test;
+    }
+  }
+  if (curLine) lines.push(curLine);
+
+  let longestW = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const lw = ctx.measureText(lines[i]).width;
+    if (lw > longestW) longestW = lw;
+  }
+
+  const bubbleW = Math.max(76, longestW + 28);
+  const lineH = 19;
+  const bubbleH = lines.length * lineH + 16;
+  const bx = isLeftPointer ? x - 14 : x - bubbleW + 14;
+  const by = y - bubbleH - 10;
+
+  // Soft drop shadow
+  ctx.shadowColor = 'rgba(0,0,0,0.22)';
+  ctx.shadowBlur = 10;
   ctx.shadowOffsetY = 4;
 
-  // White bubble with pink border
+  // White bubble with delicate pink border
   ctx.fillStyle = '#FFFFFF';
   ctx.beginPath();
   roundRect(ctx, bx, by, bubbleW, bubbleH, 14);
@@ -132,21 +155,24 @@ function drawSpeechBubble(
   ctx.beginPath();
   if (isLeftPointer) {
     ctx.moveTo(bx + 18, by + bubbleH);
-    ctx.lineTo(bx + 10, by + bubbleH + 10);
+    ctx.lineTo(bx + 8, by + bubbleH + 9);
     ctx.lineTo(bx + 26, by + bubbleH);
   } else {
     ctx.moveTo(bx + bubbleW - 26, by + bubbleH);
-    ctx.lineTo(bx + bubbleW - 10, by + bubbleH + 10);
+    ctx.lineTo(bx + bubbleW - 8, by + bubbleH + 9);
     ctx.lineTo(bx + bubbleW - 18, by + bubbleH);
   }
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // Text
+  // Text rendered line by line
   ctx.textAlign = 'center';
   ctx.fillStyle = '#9F1239';
-  ctx.fillText(text, bx + bubbleW / 2, by + 21);
+  const textStartY = by + 18;
+  for (let li = 0; li < lines.length; li++) {
+    ctx.fillText(lines[li], bx + bubbleW / 2, textStartY + li * lineH);
+  }
   ctx.restore();
 }
 
@@ -1296,33 +1322,34 @@ function drawAnimatedLoveLetter(
   message: string,
   templateId: string
 ) {
-  // Only reveal letter in the middle portion of the video (progress >= 0.35)
-  if (progress < 0.35) return;
+  // Only reveal letter in the final celebratory portion of the video (progress >= 0.44)
+  if (progress < 0.44) return;
 
-  const letterProgress = Math.min(1, (progress - 0.35) / 0.65);
+  const letterProgress = Math.min(1, (progress - 0.44) / 0.56);
   ctx.save();
 
-  // Responsive Card sizing in 16:9
-  const cardW = Math.min(w * 0.76, 680);
-  const cardH = Math.min(h * 0.62, 390);
+  // Responsive Card sizing adapting across 16:9, 9:16, 1:1
+  const isPortrait = h > w;
+  const cardW = isPortrait ? Math.min(w * 0.90, 560) : Math.min(w * 0.76, 680);
+  const cardH = isPortrait ? Math.min(h * 0.52, 440) : Math.min(h * 0.62, 390);
   const cardX = (w - cardW) / 2;
-  const cardY = h * 0.24 - (1 - letterProgress) * 35;
+  const cardY = (h - cardH) / 2 - (1 - letterProgress) * 20;
 
   ctx.globalAlpha = Math.min(1, letterProgress * 2.8);
 
   // Drop shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
   ctx.shadowBlur = 32;
-  ctx.shadowOffsetY = 14;
+  ctx.shadowOffsetY = 12;
 
-  // Parchment paper
+  // Parchment paper background
   const paperGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
   paperGrad.addColorStop(0, '#FFFDF8');
   paperGrad.addColorStop(0.5, '#FFF8F0');
   paperGrad.addColorStop(1, '#FFECD6');
   ctx.fillStyle = paperGrad;
   ctx.beginPath();
-  roundRect(ctx, cardX, cardY, cardW, cardH, 22);
+  roundRect(ctx, cardX, cardY, cardW, cardH, 20);
   ctx.fill();
 
   ctx.shadowBlur = 0;
@@ -1330,21 +1357,21 @@ function drawAnimatedLoveLetter(
 
   // Gold Gilded Border
   ctx.strokeStyle = '#F59E0B';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2.5;
   ctx.stroke();
 
   // Inner dashed border
   ctx.strokeStyle = '#FDA4AF';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1.2;
   ctx.setLineDash([6, 4]);
   ctx.beginPath();
-  roundRect(ctx, cardX + 12, cardY + 12, cardW - 24, cardH - 24, 16);
+  roundRect(ctx, cardX + 10, cardY + 10, cardW - 20, cardH - 20, 14);
   ctx.stroke();
   ctx.setLineDash([]);
 
   // Corner Hearts
-  drawHeart(ctx, cardX + 26, cardY + 26, 16, '#E11D48');
-  drawHeart(ctx, cardX + cardW - 26, cardY + 26, 16, '#E11D48');
+  drawHeart(ctx, cardX + 24, cardY + 24, 15, '#E11D48');
+  drawHeart(ctx, cardX + cardW - 24, cardY + 24, 15, '#E11D48');
 
   // Title
   const title =
@@ -1356,59 +1383,89 @@ function drawAnimatedLoveLetter(
       ? '📚 LỜI TRI ÂN KÍNH GỬI CÔ'
       : '🎁 MÓN QUÀ TRI KỶ 20·10';
 
+  const titleSize = Math.max(16, Math.min(23, Math.floor(cardW * 0.035)));
   ctx.textAlign = 'center';
-  ctx.font = `bold italic ${Math.floor(w * 0.024)}px "Cormorant Garamond", Georgia, serif`;
+  ctx.font = `bold italic ${titleSize}px "Cormorant Garamond", Georgia, serif`;
   ctx.fillStyle = '#BE123C';
-  ctx.fillText(title, w / 2, cardY + 44);
+  ctx.fillText(title, w / 2, cardY + titleSize + 16);
 
   // Gold Divider
+  const divY = cardY + titleSize + 25;
   ctx.strokeStyle = '#F59E0B';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.moveTo(w / 2 - cardW * 0.34, cardY + 56);
-  ctx.lineTo(w / 2 + cardW * 0.34, cardY + 56);
+  ctx.moveTo(w / 2 - cardW * 0.35, divY);
+  ctx.lineTo(w / 2 + cardW * 0.35, divY);
   ctx.stroke();
 
   // Recipient Name Highlight
-  ctx.font = `italic bold ${Math.floor(w * 0.034)}px "Cormorant Garamond", Georgia, serif`;
+  const recipSize = Math.max(18, Math.min(28, Math.floor(cardW * 0.045)));
+  const recipY = divY + recipSize + 14;
+  ctx.font = `italic bold ${recipSize}px "Cormorant Garamond", Georgia, serif`;
   ctx.fillStyle = '#B91C1C';
-  ctx.shadowColor = 'rgba(239, 68, 68, 0.4)';
-  ctx.shadowBlur = 8;
-  ctx.fillText(`Kính gửi: ${recipientName || 'Người Thương'}`, w / 2, cardY + 95);
+  ctx.shadowColor = 'rgba(239, 68, 68, 0.35)';
+  ctx.shadowBlur = 6;
+  ctx.fillText(`Kính gửi: ${recipientName || 'Người Thương'}`, w / 2, recipY);
   ctx.shadowBlur = 0;
 
-  // Message Body with Word Wrap
-  ctx.font = `500 ${Math.floor(w * 0.021)}px "Cormorant Garamond", Georgia, serif`;
+  // Bottom Sign-off Anchor
+  const sigY = cardY + cardH - 30;
+
+  // Message Body with Word Wrap and bounds check
+  const msgSize = Math.max(13, Math.min(17, Math.floor(cardW * 0.028)));
+  ctx.font = `500 ${msgSize}px "Cormorant Garamond", Georgia, serif`;
   ctx.fillStyle = '#372023';
 
-  const maxW = cardW - 80;
+  const maxW = cardW - 70;
   const wrappedLines = wrapText(ctx, message, maxW);
-  const lineH = Math.floor(w * 0.032);
-  const startMsgY = cardY + 138;
+  const lineH = Math.round(msgSize * 1.55);
+  const startMsgY = recipY + msgSize + 16;
 
-  for (let l = 0; l < Math.min(4, wrappedLines.length); l++) {
-    ctx.fillText(wrappedLines[l], w / 2, startMsgY + l * lineH);
+  // Calculate available space to ensure message lines NEVER collide with sign-off
+  const availableH = sigY - startMsgY - 14;
+  const maxLines = Math.max(1, Math.min(4, Math.floor(availableH / lineH)));
+
+  for (let l = 0; l < Math.min(maxLines, wrappedLines.length); l++) {
+    let textLine = wrappedLines[l];
+    if (l === maxLines - 1 && wrappedLines.length > maxLines) {
+      textLine = textLine.replace(/[,.;\s]+$/, '') + '...';
+    }
+    ctx.fillText(textLine, w / 2, startMsgY + l * lineH);
   }
 
-  // Sender Sign-off
-  const sigY = cardY + cardH - 36;
-  ctx.font = `italic 400 ${Math.floor(w * 0.018)}px "Plus Jakarta Sans", sans-serif`;
-  ctx.fillStyle = '#E11D48';
-  ctx.fillText(`Yêu thương từ: `, w / 2 - 65, sigY);
+  // Sender Sign-off: Perfectly measured so prefix and sender name NEVER overlap
+  const prefix = 'Thân gửi từ: ';
+  const sender = senderName?.trim() || 'Người Gửi';
 
-  ctx.font = `italic bold ${Math.floor(w * 0.026)}px "Cormorant Garamond", Georgia, serif`;
+  const prefixFont = `italic 400 ${Math.max(11, Math.min(14, Math.floor(cardW * 0.022)))}px "Plus Jakarta Sans", sans-serif`;
+  const senderFont = `italic bold ${Math.max(14, Math.min(19, Math.floor(cardW * 0.030)))}px "Cormorant Garamond", Georgia, serif`;
+
+  ctx.font = prefixFont;
+  const prefixW = ctx.measureText(prefix).width;
+  ctx.font = senderFont;
+  const senderW = ctx.measureText(sender).width;
+  const totalSigW = prefixW + senderW;
+
+  const sigStartX = Math.max(cardX + 24, w / 2 - totalSigW / 2);
+
+  ctx.textAlign = 'left';
+  ctx.font = prefixFont;
+  ctx.fillStyle = '#E11D48';
+  ctx.fillText(prefix, sigStartX, sigY);
+
+  ctx.font = senderFont;
   ctx.fillStyle = '#991B1B';
-  ctx.fillText(senderName || 'Người Gửi', w / 2 + 55, sigY);
+  ctx.fillText(sender, sigStartX + prefixW, sigY);
 
   // Beating Heart Stamp
-  const stampPulse = Math.sin(progress * Math.PI * 8) * 3;
-  drawHeart(ctx, cardX + cardW - 52, cardY + cardH - 42, 20 + stampPulse, '#E11D48');
+  const stampPulse = Math.sin(progress * Math.PI * 8) * 2.5;
+  drawHeart(ctx, cardX + cardW - 44, cardY + cardH - 34, 18 + stampPulse, '#E11D48');
 
   ctx.restore();
 }
 
 // ==============================================================
-// 4. MAIN CINEMATIC COMPOSITOR (MULTI-BEAT 16:9 WIDESCREEN)
+// 4. MAIN CINEMATIC COMPOSITOR (MULTI-BEAT WIDESCREEN & MOBILE)
 // ==============================================================
 
 export function renderCartoonScene(options: CartoonSceneOptions) {
@@ -1438,24 +1495,34 @@ export function renderCartoonScene(options: CartoonSceneOptions) {
     drawCafePartyBackground(ctx, width, height, elapsed);
   }
 
-  // 2. Top Event Tag
+  // 2. Top Event Tag (clean, responsive, non-overlapping)
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.floor(width * 0.016)}px "Plus Jakarta Sans", sans-serif`;
+  const tagFontSize = Math.max(11, Math.min(15, Math.floor(width * 0.015)));
+  ctx.font = `bold ${tagFontSize}px "Plus Jakarta Sans", sans-serif`;
   ctx.fillStyle = '#FFFFFF';
   ctx.shadowColor = 'rgba(0,0,0,0.85)';
   ctx.shadowBlur = 8;
-  ctx.fillText('✨ 20 · 10 · NGÀY PHỤ NỮ VIỆT NAM ✨', width / 2, height * 0.065);
+  ctx.fillText('✨ 20 · 10 · NGÀY PHỤ NỮ VIỆT NAM ✨', width / 2, Math.max(26, height * 0.055));
   ctx.restore();
 
   // Blinking timer
   const isBlinking = Math.floor(elapsed * 2.5) % 9 === 0;
 
-  // Multi-Beat Story Timing
-  // Beat 1: Walking in & thought bubble (0 to 0.30)
-  // Beat 2: Handing over & reaction (0.30 to 0.55)
-  // Beat 3: Envelope unrolls & Confetti explosion (0.50 to 0.85)
-  // Beat 4: Grand finale celebration (0.85 to 1.0)
+  // Sequential Story Timing to prevent ANY text collision:
+  // Beat 1 (0.00 -> 0.24): Giver approaches and speaks greeting
+  // Beat 2 (0.24 -> 0.44): Receiver reacts and expresses joy
+  // Beat 3 (0.44 -> 1.00): Confetti explodes & Love Letter Card unfolds cleanly
+
+  const isBeat1 = progress < 0.24;
+  const isBeat2 = progress >= 0.24 && progress < 0.44;
+
+  const beat1Alpha = isBeat1
+    ? Math.min(1, progress * 10) * (progress > 0.20 ? Math.max(0, 1 - (progress - 0.20) * 25) : 1)
+    : 0;
+  const beat2Alpha = isBeat2
+    ? Math.min(1, (progress - 0.24) * 10) * (progress > 0.39 ? Math.max(0, 1 - (progress - 0.39) * 20) : 1)
+    : 0;
 
   if (templateId === 'couple-romance') {
     const boyTargetX = width * 0.36;
@@ -1463,30 +1530,29 @@ export function renderCartoonScene(options: CartoonSceneOptions) {
     const walkRatio = Math.min(1, progress * 3.2);
     const boyX = boyStartX + (boyTargetX - boyStartX) * walkRatio;
     const boyWalkCycle = walkRatio < 1 ? elapsed * 2.4 : 0;
-    const handoverProgress = Math.max(0, Math.min(1, (progress - 0.26) * 3));
+    const handoverProgress = Math.max(0, Math.min(1, (progress - 0.24) * 3));
     const girlX = width * 0.65;
-    const reactionProgress = Math.max(0, Math.min(1, (progress - 0.30) * 3));
+    const reactionProgress = Math.max(0, Math.min(1, (progress - 0.28) * 3));
 
     // Characters
     drawCartoonBoy(ctx, boyX, height * 0.68, 1.25, boyWalkCycle, handoverProgress, isBlinking);
     drawCartoonGirl(ctx, girlX, height * 0.68, 1.22, elapsed * 0.8, reactionProgress, isBlinking);
 
-    // Comic Speech Bubbles
-    if (progress < 0.28) {
-      drawSpeechBubble(ctx, boyX, height * 0.40, 'Hôm nay 20/10 rồi, mình có món quà bí mật... 💌', false, 1);
-    } else if (progress >= 0.28 && progress < 0.50) {
-      drawSpeechBubble(ctx, boyX + 25, height * 0.40, 'Tặng em nè! Chúc em luôn rạng rỡ! 🌹', false, 1);
-      drawSpeechBubble(ctx, girlX - 10, height * 0.40, 'Ôi bất ngờ quá! Cảm ơn anh nha! ❤️', true, 1);
+    // Sequential Speech Bubbles (NEVER OVERLAP)
+    if (isBeat1 && beat1Alpha > 0.05) {
+      drawSpeechBubble(ctx, boyX + 10, height * 0.38, 'Hôm nay 20/10 rồi, mình có món quà bí mật... 💌', false, beat1Alpha);
+    } else if (isBeat2 && beat2Alpha > 0.05) {
+      drawSpeechBubble(ctx, girlX - 10, height * 0.38, 'Ôi bất ngờ quá! Cảm ơn anh nha! ❤️', true, beat2Alpha);
     }
 
     // Floating love hearts
-    if (showHearts && handoverProgress > 0.2) {
+    if (showHearts && handoverProgress > 0.2 && progress < 0.88) {
       const heartCount = 7;
       for (let h = 0; h < heartCount; h++) {
         const hProgress = ((progress * 3 + h / heartCount) % 1);
         const hx = width * 0.49 + Math.sin(h * 1.6 + elapsed * 1.5) * 50;
         const hy = height * 0.60 - hProgress * 130;
-        drawHeart(ctx, hx, hy, 14 * (1 - hProgress * 0.3), '#F43F5E', 1 - hProgress);
+        drawHeart(ctx, hx, hy, 14 * (1 - hProgress * 0.3), '#F43F5E', (1 - hProgress) * 0.8);
       }
     }
   } else if (templateId === 'mom-child') {
@@ -1496,17 +1562,16 @@ export function renderCartoonScene(options: CartoonSceneOptions) {
     const childX = childStartX + (childTargetX - childStartX) * runRatio;
     const runCycle = runRatio < 1 ? elapsed * 3.5 : 0;
     const momX = width * 0.62;
-    const embracePhase = Math.max(0, Math.min(1, (progress - 0.28) * 3));
+    const embracePhase = Math.max(0, Math.min(1, (progress - 0.26) * 3));
 
     drawCartoonChild(ctx, childX, height * 0.70, 1.25, runCycle, true);
     drawCartoonMom(ctx, momX, height * 0.66, 1.28, 1, embracePhase);
 
-    // Speech Bubbles
-    if (progress < 0.28) {
-      drawSpeechBubble(ctx, childX, height * 0.44, 'Con chạy nhanh về tặng hoa Mẹ đây! 🌸', false, 1);
-    } else if (progress >= 0.28 && progress < 0.52) {
-      drawSpeechBubble(ctx, childX + 20, height * 0.44, 'Chúc Mẹ 20/10 thật hạnh phúc ạ! 💖', false, 1);
-      drawSpeechBubble(ctx, momX - 10, height * 0.38, 'Mẹ yêu con nhiều lắm, con ngoan của Mẹ! 🥰', true, 1);
+    // Sequential Speech Bubbles (NEVER OVERLAP)
+    if (isBeat1 && beat1Alpha > 0.05) {
+      drawSpeechBubble(ctx, childX + 15, height * 0.42, 'Con chạy nhanh về tặng hoa Mẹ đây! 🌸', false, beat1Alpha);
+    } else if (isBeat2 && beat2Alpha > 0.05) {
+      drawSpeechBubble(ctx, momX - 15, height * 0.36, 'Mẹ yêu con nhiều lắm, con ngoan của Mẹ! 🥰', true, beat2Alpha);
     }
   } else if (templateId === 'teacher-student') {
     const stuStartX = width * 0.20;
@@ -1518,11 +1583,11 @@ export function renderCartoonScene(options: CartoonSceneOptions) {
     drawCartoonStudent(ctx, stuX, height * 0.68, 1.22, stuRatio < 1 ? elapsed * 2 : 0);
     drawCartoonTeacher(ctx, teacherX, height * 0.65, 1.28, elapsed);
 
-    if (progress < 0.28) {
-      drawSpeechBubble(ctx, stuX, height * 0.42, 'Hôm nay em mang hoa & bài điểm 10 tặng Cô! 📚', false, 1);
-    } else if (progress >= 0.28 && progress < 0.52) {
-      drawSpeechBubble(ctx, stuX + 15, height * 0.42, 'Em kính chúc Cô ngày 20/10 ngập tràn niềm vui! 💐', false, 1);
-      drawSpeechBubble(ctx, teacherX - 10, height * 0.38, 'Cô cảm ơn em! Chúc em luôn chăm ngoan học giỏi! 🌟', true, 1);
+    // Sequential Speech Bubbles (NEVER OVERLAP)
+    if (isBeat1 && beat1Alpha > 0.05) {
+      drawSpeechBubble(ctx, stuX + 15, height * 0.40, 'Hôm nay em mang hoa & bài điểm 10 tặng Cô! 📚', false, beat1Alpha);
+    } else if (isBeat2 && beat2Alpha > 0.05) {
+      drawSpeechBubble(ctx, teacherX - 15, height * 0.36, 'Cô cảm ơn em! Chúc em luôn chăm ngoan! 🌟', true, beat2Alpha);
     }
   } else {
     // Sisters & BFFs
@@ -1531,19 +1596,21 @@ export function renderCartoonScene(options: CartoonSceneOptions) {
     drawCartoonGirl(ctx, bff1X, height * 0.68, 1.2, elapsed * 0.9, 0.8, isBlinking);
     drawCartoonGirl(ctx, bff2X, height * 0.68, 1.2, elapsed * 0.9, 0.9, isBlinking);
 
-    if (progress >= 0.15 && progress < 0.50) {
-      drawSpeechBubble(ctx, bff1X, height * 0.40, 'Surprise! Chúc mừng 20/10 cô bạn thân xịn xò! 🎁', false, 1);
-      drawSpeechBubble(ctx, bff2X, height * 0.40, 'Aaaa thích quá! Cảm ơn cậu nhiều nha! 💖', true, 1);
+    // Sequential Speech Bubbles (NEVER OVERLAP)
+    if (isBeat1 && beat1Alpha > 0.05) {
+      drawSpeechBubble(ctx, bff1X, height * 0.38, 'Surprise! Chúc mừng 20/10 cô bạn thân xịn xò! 🎁', false, beat1Alpha);
+    } else if (isBeat2 && beat2Alpha > 0.05) {
+      drawSpeechBubble(ctx, bff2X, height * 0.38, 'Aaaa thích quá! Cảm ơn cậu nhiều nha! 💖', true, beat2Alpha);
     }
   }
 
-  // 3. Confetti Explosion when envelope opens (around progress 0.48 to 0.70)
-  if (showConfetti && progress >= 0.48 && progress <= 0.76) {
-    const explosionPhase = (progress - 0.48) / 0.28;
+  // 3. Confetti Explosion when envelope opens (around progress 0.46 to 0.74)
+  if (showConfetti && progress >= 0.46 && progress <= 0.74) {
+    const explosionPhase = (progress - 0.46) / 0.28;
     drawConfettiExplosion(ctx, width, height, explosionPhase);
   }
 
-  // 4. Render Animated Confession Love Letter
+  // 4. Render Animated Confession Love Letter Card (unfolds starting at 0.44 without bubble interference)
   drawAnimatedLoveLetter(
     ctx,
     width,
