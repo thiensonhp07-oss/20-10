@@ -14,9 +14,13 @@ interface HeroConstellationProps {
   onToggleMusic: () => void;
 }
 
-const RAW_ROSE_SRC = '/src/assets/images/floral_cutout_rose_1792422501281.jpg';
-const RAW_PEONY_SRC = '/src/assets/images/floral_cutout_peony_1792422502296.jpg';
-const RAW_BRANCH_SRC = '/src/assets/images/floral_cutout_branch_1792422501881.jpg';
+import rawRoseSrc from '../assets/images/floral_cutout_rose_1792422501281.jpg';
+import rawPeonySrc from '../assets/images/floral_cutout_peony_1792422502296.jpg';
+import rawBranchSrc from '../assets/images/floral_cutout_branch_1792422501881.jpg';
+
+const RAW_ROSE_SRC = rawRoseSrc;
+const RAW_PEONY_SRC = rawPeonySrc;
+const RAW_BRANCH_SRC = rawBranchSrc;
 
 export const HeroConstellation: React.FC<HeroConstellationProps> = ({
   isDarkTheme,

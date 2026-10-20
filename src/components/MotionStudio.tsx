@@ -24,6 +24,11 @@ import { MotionTemplateId, MotionTemplate } from '../types.ts';
 import { playAffirmationSound, playPluckChime } from '../utils/soundEffects.ts';
 import { renderCartoonScene } from '../utils/cartoonRenderer.ts';
 
+import storyCoupleImg from '../assets/images/story_couple_love_1792472267007.jpg';
+import storyMomChildImg from '../assets/images/story_mom_child_1792472249381.jpg';
+import storyTeacherStudentImg from '../assets/images/story_teacher_student_1792472284603.jpg';
+import storySistersImg from '../assets/images/story_sisters_friendship_1792472300540.jpg';
+
 interface MotionStudioProps {
   isDarkTheme: boolean;
   onOpenCardStudio?: () => void;
@@ -40,7 +45,7 @@ const STORY_TEMPLATES: MotionTemplate[] = [
     icon: '💌',
     accentHex: '#E11D48',
     desc: 'Chàng trai bước đi nhịp nhàng, trao bức thư tỏ tình và bó hoa hồng; cô gái bẽn lẽn đỏ mặt mỉm cười hạnh phúc, phong thư mở bung ngàn tim bay.',
-    imageSrc: '',
+    imageSrc: storyCoupleImg,
     defaultRecipient: 'Em Yêu Của Anh',
     defaultSender: 'Anh Yêu',
     defaultMessage: 'Chúc em 20/10 ngập tràn niềm vui, luôn xinh đẹp và rạng rỡ. Cảm ơn em đã đến và biến cuộc đời anh thành bản tình ca ngọt ngào nhất!',
@@ -56,7 +61,7 @@ const STORY_TEMPLATES: MotionTemplate[] = [
     icon: '🌸',
     accentHex: '#F59E0B',
     desc: 'Bé con hoạt hình chạy lon ton nhún nhảy, nâng cao bó hoa thơm tặng Mẹ; Mẹ hiền dịu dàng cúi xuống ôm con vào lòng trong ánh ban mai.',
-    imageSrc: '',
+    imageSrc: storyMomChildImg,
     defaultRecipient: 'Mẹ Kính Yêu',
     defaultSender: 'Con Của Mẹ',
     defaultMessage: 'Con kính chúc Mẹ ngày 20/10 luôn an yên, mạnh khỏe và ngập tràn nụ cười. Cảm ơn Mẹ vì cả đời tảo tần hy sinh vì chúng con!',
@@ -72,7 +77,7 @@ const STORY_TEMPLATES: MotionTemplate[] = [
     icon: '📚',
     accentHex: '#10B981',
     desc: 'Bên bục giảng bảng đen hoa bay, học trò lễ phép cúi đầu dâng hoa và bài kiểm tra điểm mười đỏ chói; Cô giáo áo dài mỉm cười đón nhận trìu mến.',
-    imageSrc: '',
+    imageSrc: storyTeacherStudentImg,
     defaultRecipient: 'Cô Giáo Kính Mến',
     defaultSender: 'Học Trò Nhỏ',
     defaultMessage: 'Kính chúc Cô ngày 20/10 luôn vui tươi, dồi dào sức khỏe và ngập tràn hạnh phúc. Cảm ơn Cô đã tận tụy dìu dắt bao ước mơ bay xa!',
@@ -88,7 +93,7 @@ const STORY_TEMPLATES: MotionTemplate[] = [
     icon: '🎁',
     accentHex: '#8B5CF6',
     desc: 'Hai cô bạn gái thời trang cute cùng mở hộp quà bất ngờ, bóng bay trái tim và pháo hoa rực rỡ bừng sáng cùng tiếng cười rộn rã.',
-    imageSrc: '',
+    imageSrc: storySistersImg,
     defaultRecipient: 'Cô Bạn Tri Kỷ',
     defaultSender: 'Bạn Thân Của Cậu',
     defaultMessage: 'Chúc người bạn tuyệt vời ngày 20/10 nhận quà mỏi tay, luôn trẻ đẹp, tự tin tỏa sáng và mãi là tri kỷ sát cánh bên nhau nhé!',

@@ -1,4 +1,7 @@
 import { FloralNode, FlowerItem, PresetWish, WishItem } from '../types.ts';
+import lotusImg from '../assets/images/flower_lotus_tribute_1792421941553.jpg';
+import heroPastelImg from '../assets/images/hero_pastel_flowers_luxury_1792421941147.jpg';
+import peonyLuxuryImg from '../assets/images/flower_peony_luxury_1792421942061.jpg';
 
 export const HERO_NODES: FloralNode[] = [
   {
@@ -9,7 +12,7 @@ export const HERO_NODES: FloralNode[] = [
     meaning: 'Biểu tượng của nét đẹp đài các, dịu dàng và lòng vị tha bao dung của người phụ nữ Việt.',
     poem: 'Trong đầm gì đẹp bằng sen / Gần bùn mà chẳng hôi tanh mùi bùn.',
     position: { x: 18, y: 32 },
-    imagePath: '/src/assets/images/flower_lotus_tribute_1792421941553.jpg',
+    imagePath: lotusImg,
     colorTone: '#FAD2E1',
   },
   {
@@ -20,7 +23,7 @@ export const HERO_NODES: FloralNode[] = [
     meaning: 'Tình cảm nồng nàn được gói ghém trong nét e ấp, tinh khôi và chân thành nhất.',
     poem: 'Cánh hồng e ấp giọt sương mai / Dành tặng cho em nét trang đài.',
     position: { x: 82, y: 35 },
-    imagePath: '/src/assets/images/hero_pastel_flowers_luxury_1792421941147.jpg',
+    imagePath: heroPastelImg,
     colorTone: '#FDE2E4',
   },
   {
@@ -31,7 +34,7 @@ export const HERO_NODES: FloralNode[] = [
     meaning: 'Sự tự tin, trí tuệ thanh cao và khí chất độc lập tỏa sáng rực rỡ trong thời đại mới.',
     poem: 'Hồ điệp khoe sắc giữa muôn hoa / Thanh khiết kiêu sa tựa ngọc ngà.',
     position: { x: 16, y: 68 },
-    imagePath: '/src/assets/images/hero_pastel_flowers_luxury_1792421941147.jpg',
+    imagePath: heroPastelImg,
     colorTone: '#DFE7FD',
   },
   {
@@ -42,7 +45,7 @@ export const HERO_NODES: FloralNode[] = [
     meaning: 'Vẻ đẹp quý phái, đằm thắm, mang phúc lộc, an khang và hạnh phúc đong đầy.',
     poem: 'Đóa hoa vương giả bậc giai nhân / Rạng rỡ hương thơm giữa cõi trần.',
     position: { x: 84, y: 66 },
-    imagePath: '/src/assets/images/flower_peony_luxury_1792421942061.jpg',
+    imagePath: peonyLuxuryImg,
     colorTone: '#F0E6EF',
   },
 ];
@@ -59,7 +62,7 @@ export const FLOWER_COLLECTION: FlowerItem[] = [
     hexCode: '#F7CAD0',
     poemQuote: 'Nụ cười em nở dịu dàng như cánh hồng sớm mai, làm ấm bừng cả một khoảng trời.',
     description: 'Từng lớp cánh hoa mềm như lụa xếp tầng tinh tế, tỏa hương thơm thanh thoát, tượng trưng cho tình cảm thuần khiết nhất.',
-    image: '/src/assets/images/hero_pastel_flowers_luxury_1792421941147.jpg',
+    image: heroPastelImg,
     badge: 'Được yêu thích nhất',
   },
   {
@@ -73,7 +76,7 @@ export const FLOWER_COLLECTION: FlowerItem[] = [
     hexCode: '#FDE2E4',
     poemQuote: 'Công ơn cha mẹ cao như núi, tình mẫu tử nồng ấm tựa sắc mẫu đơn ngát hương.',
     description: 'Vương giả chi hoa biểu trưng cho tấm lòng bao la của Mẹ hiền luôn chở che, nuôi dưỡng con qua bao tháng năm cuộc đời.',
-    image: '/src/assets/images/flower_peony_luxury_1792421942061.jpg',
+    image: peonyLuxuryImg,
     badge: 'Ý nghĩa hiếu kính',
   },
   {
@@ -87,7 +90,7 @@ export const FLOWER_COLLECTION: FlowerItem[] = [
     hexCode: '#FAD2E1',
     poemQuote: 'Thanh cao chẳng gợn chút bụi trần, như tấm lòng người đưa đò chở bao thế hệ nên người.',
     description: 'Quốc hoa Việt Nam mang vẻ đẹp thanh tao thoát tục, là lời tri ân sâu sắc nhất dành tặng những người phụ nữ dẫn lối cuộc đời.',
-    image: '/src/assets/images/flower_lotus_tribute_1792421941553.jpg',
+    image: lotusImg,
     badge: 'Tôn vinh trí tuệ',
   },
   {
@@ -101,7 +104,7 @@ export const FLOWER_COLLECTION: FlowerItem[] = [
     hexCode: '#E2ECE9',
     poemQuote: 'Từng cánh nhỏ đan kết thành chùm hoa rực rỡ, như những kỷ niệm ấm áp bên gia đình.',
     description: 'Chùm hoa tròn đầy tượng trưng cho sự gắn bó sắt son và lời chúc cho người chị, người em gái luôn tươi vui, hạnh phúc.',
-    image: '/src/assets/images/hero_pastel_flowers_luxury_1792421941147.jpg',
+    image: heroPastelImg,
     badge: 'Gắn kết yêu thương',
   },
   {
@@ -115,7 +118,7 @@ export const FLOWER_COLLECTION: FlowerItem[] = [
     hexCode: '#FFF1E6',
     poemQuote: 'Một đóa tulip kiêu sa cho nụ cười em thêm rạng ngời trong ngày tôn vinh phái đẹp.',
     description: 'Dáng đứng thanh mảnh cùng đường nét tối giản tôn lên thần thái thanh tao và sang trọng của người phụ nữ hiện đại.',
-    image: '/src/assets/images/flower_peony_luxury_1792421942061.jpg',
+    image: peonyLuxuryImg,
     badge: 'Thanh lịch hiện đại',
   },
   {
@@ -129,7 +132,7 @@ export const FLOWER_COLLECTION: FlowerItem[] = [
     hexCode: '#EDDCD2',
     poemQuote: 'Vững vàng bản lĩnh thương trường, dịu dàng tỏa sáng trong từng cử chỉ.',
     description: 'Loài hoa của sự kiêu hãnh và thành đạt, thay cho lời chúc sự nghiệp thăng hoa, rạng danh phái đẹp Việt Nam.',
-    image: '/src/assets/images/flower_lotus_tribute_1792421941553.jpg',
+    image: lotusImg,
     badge: 'Sang trọng & Uy quyền',
   },
 ];

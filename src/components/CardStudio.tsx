@@ -28,9 +28,13 @@ interface CardStudioProps {
 type CardStyleOption = 'blush' | 'champagne' | 'pearl' | 'velvet';
 type FloralDecoType = 'rose' | 'peony' | 'branch' | 'duo';
 
-const RAW_ROSE_SRC = '/src/assets/images/floral_cutout_rose_1792422501281.jpg';
-const RAW_PEONY_SRC = '/src/assets/images/floral_cutout_peony_1792422502296.jpg';
-const RAW_BRANCH_SRC = '/src/assets/images/floral_cutout_branch_1792422501881.jpg';
+import rawRoseCutoutSrc from '../assets/images/floral_cutout_rose_1792422501281.jpg';
+import rawPeonyCutoutSrc from '../assets/images/floral_cutout_peony_1792422502296.jpg';
+import rawBranchCutoutSrc from '../assets/images/floral_cutout_branch_1792422501881.jpg';
+
+const RAW_ROSE_SRC = rawRoseCutoutSrc;
+const RAW_PEONY_SRC = rawPeonyCutoutSrc;
+const RAW_BRANCH_SRC = rawBranchCutoutSrc;
 
 export const CardStudio: React.FC<CardStudioProps> = ({
   isDarkTheme,
