@@ -73,26 +73,35 @@ export function drawHeart(
   ctx.restore();
 }
 
-// Helper: Word wrap text
+// Helper: Word wrap text with full paragraph/newline support
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
+  if (!text) return [];
+  const paragraphs = text.split('\n');
+  const allLines: string[] = [];
 
-  for (let i = 0; i < words.length; i++) {
-    const testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
-    if (ctx.measureText(testLine).width > maxWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = words[i];
-    } else {
-      currentLine = testLine;
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
+    if (!trimmed) {
+      continue;
     }
+    const words = trimmed.split(/\s+/);
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
+      if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+        allLines.push(currentLine);
+        currentLine = words[i];
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) allLines.push(currentLine);
   }
-  if (currentLine) lines.push(currentLine);
-  return lines;
+  return allLines;
 }
 
-// Comic Speech Bubble Drawer with multi-line auto-wrap and collision avoidance
+// Comic Speech Bubble Drawer with responsive boundary clamping & accurate pointer targeting
 function drawSpeechBubble(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -105,22 +114,19 @@ function drawSpeechBubble(
   ctx.save();
   ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
 
-  ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
-  const maxBubbleW = 230;
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let curLine = '';
+  const canvasW = ctx.canvas?.width || 1280;
+  const canvasH = ctx.canvas?.height || 720;
 
-  for (let i = 0; i < words.length; i++) {
-    const test = curLine ? `${curLine} ${words[i]}` : words[i];
-    if (ctx.measureText(test).width > maxBubbleW - 28 && curLine) {
-      lines.push(curLine);
-      curLine = words[i];
-    } else {
-      curLine = test;
-    }
+  // Responsive font & bubble dimensions
+  const bubbleFontSize = Math.max(12, Math.min(14, Math.floor(canvasW * 0.012)));
+  ctx.font = `bold ${bubbleFontSize}px "Plus Jakarta Sans", sans-serif`;
+
+  const maxBubbleW = Math.max(180, Math.min(260, canvasW * 0.36));
+  const lines = wrapText(ctx, text, maxBubbleW - 28);
+  if (lines.length === 0) {
+    ctx.restore();
+    return;
   }
-  if (curLine) lines.push(curLine);
 
   let longestW = 0;
   for (let i = 0; i < lines.length; i++) {
@@ -128,15 +134,19 @@ function drawSpeechBubble(
     if (lw > longestW) longestW = lw;
   }
 
-  const bubbleW = Math.max(76, longestW + 28);
-  const lineH = 19;
-  const bubbleH = lines.length * lineH + 16;
-  const bx = isLeftPointer ? x - 14 : x - bubbleW + 14;
-  const by = y - bubbleH - 10;
+  const bubbleW = Math.max(84, Math.min(maxBubbleW, longestW + 28));
+  const lineH = Math.round(bubbleFontSize * 1.45);
+  const bubbleH = lines.length * lineH + 18;
+
+  // Position bubble safely over the character with clamping so it NEVER clips off-screen
+  // If character is on the left half, center bubble slightly right; if right, slightly left
+  const rawBx = isLeftPointer ? x - 20 : x - bubbleW + 20;
+  const bx = Math.max(16, Math.min(canvasW - bubbleW - 16, rawBx));
+  const by = Math.max(40, Math.min(canvasH - bubbleH - 24, y - bubbleH - 12));
 
   // Soft drop shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.22)';
-  ctx.shadowBlur = 10;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+  ctx.shadowBlur = 12;
   ctx.shadowOffsetY = 4;
 
   // White bubble with delicate pink border
@@ -150,18 +160,13 @@ function drawSpeechBubble(
   ctx.lineWidth = 1.8;
   ctx.stroke();
 
-  // Pointer triangle
+  // Pointer triangle pointing accurately towards character's head at (x, y)
+  const pointerBaseX = Math.max(bx + 18, Math.min(bx + bubbleW - 18, x));
   ctx.fillStyle = '#FFFFFF';
   ctx.beginPath();
-  if (isLeftPointer) {
-    ctx.moveTo(bx + 18, by + bubbleH);
-    ctx.lineTo(bx + 8, by + bubbleH + 9);
-    ctx.lineTo(bx + 26, by + bubbleH);
-  } else {
-    ctx.moveTo(bx + bubbleW - 26, by + bubbleH);
-    ctx.lineTo(bx + bubbleW - 8, by + bubbleH + 9);
-    ctx.lineTo(bx + bubbleW - 18, by + bubbleH);
-  }
+  ctx.moveTo(pointerBaseX - 8, by + bubbleH);
+  ctx.lineTo(pointerBaseX, Math.min(canvasH - 8, by + bubbleH + 10));
+  ctx.lineTo(pointerBaseX + 8, by + bubbleH);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -169,7 +174,7 @@ function drawSpeechBubble(
   // Text rendered line by line
   ctx.textAlign = 'center';
   ctx.fillStyle = '#9F1239';
-  const textStartY = by + 18;
+  const textStartY = by + Math.round((bubbleH - lines.length * lineH) / 2) + bubbleFontSize - 2;
   for (let li = 0; li < lines.length; li++) {
     ctx.fillText(lines[li], bx + bubbleW / 2, textStartY + li * lineH);
   }
@@ -405,13 +410,25 @@ function drawClassroomBackground(ctx: CanvasRenderingContext2D, w: number, h: nu
   ctx.fill();
 
   ctx.textAlign = 'center';
-  ctx.font = `bold italic ${Math.floor(w * 0.026)}px "Cormorant Garamond", serif`;
+  let bbTitleSize = Math.max(11, Math.min(22, Math.floor(w * 0.022)));
+  ctx.font = `bold italic ${bbTitleSize}px "Cormorant Garamond", serif`;
+  const bbTitleText = '🌸 TRI ÂN NGÀY PHỤ NỮ VIỆT NAM 20·10 🌸';
+  while (ctx.measureText(bbTitleText).width > bbW - 24 && bbTitleSize > 9) {
+    bbTitleSize -= 1;
+    ctx.font = `bold italic ${bbTitleSize}px "Cormorant Garamond", serif`;
+  }
   ctx.fillStyle = '#FFF59D';
-  ctx.fillText('🌸 TRI ÂN NGÀY PHỤ NỮ VIỆT NAM 20·10 🌸', bbX + bbW / 2, bbY + bbH * 0.32);
+  ctx.fillText(bbTitleText, bbX + bbW / 2, bbY + bbTitleSize + 14);
 
-  ctx.font = `italic 600 ${Math.floor(w * 0.018)}px "Plus Jakarta Sans", sans-serif`;
-  ctx.fillStyle = '#E8F5E9';
-  ctx.fillText('Nét chữ nết người · Ơn cô vun đắp tương lai', bbX + bbW / 2, bbY + bbH * 0.56);
+  let bbSubSize = Math.max(9, Math.min(15, Math.floor(w * 0.014)));
+  ctx.font = `italic 600 ${bbSubSize}px "Plus Jakarta Sans", sans-serif`;
+  const bbSubText = 'Nét chữ nết người · Ơn cô vun đắp tương lai';
+  while (ctx.measureText(bbSubText).width > bbW - 24 && bbSubSize > 8) {
+    bbSubSize -= 1;
+    ctx.font = `italic 600 ${bbSubSize}px "Plus Jakarta Sans", sans-serif`;
+  }
+  ctx.fillStyle = '#C8E6C9';
+  ctx.fillText(bbSubText, bbX + bbW / 2, bbY + bbTitleSize + bbSubSize + 22);
   ctx.restore();
 
   // Classroom floor
@@ -1328,17 +1345,22 @@ function drawAnimatedLoveLetter(
   const letterProgress = Math.min(1, (progress - 0.44) / 0.56);
   ctx.save();
 
-  // Responsive Card sizing adapting across 16:9, 9:16, 1:1
+  // Dim the background scene characters gently with rich vignette so letter card stands out crisply without visual noise
+  ctx.fillStyle = `rgba(15, 7, 12, ${0.68 * letterProgress})`;
+  ctx.fillRect(0, 0, w, h);
+
+  // Responsive Card sizing adapting gracefully across 16:9, 9:16, 1:1
   const isPortrait = h > w;
-  const cardW = isPortrait ? Math.min(w * 0.90, 560) : Math.min(w * 0.76, 680);
-  const cardH = isPortrait ? Math.min(h * 0.52, 440) : Math.min(h * 0.62, 390);
+  const isSquare = Math.abs(h - w) < 60;
+  const cardW = isPortrait ? Math.min(w * 0.92, 540) : isSquare ? Math.min(w * 0.88, 620) : Math.min(w * 0.74, 680);
+  const cardH = isPortrait ? Math.min(h * 0.58, 480) : isSquare ? Math.min(h * 0.62, 430) : Math.min(h * 0.65, 400);
   const cardX = (w - cardW) / 2;
-  const cardY = (h - cardH) / 2 - (1 - letterProgress) * 20;
+  const cardY = (h - cardH) / 2 - (1 - letterProgress) * 16;
 
   ctx.globalAlpha = Math.min(1, letterProgress * 2.8);
 
   // Drop shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
   ctx.shadowBlur = 32;
   ctx.shadowOffsetY = 12;
 
@@ -1383,7 +1405,7 @@ function drawAnimatedLoveLetter(
       ? '📚 LỜI TRI ÂN KÍNH GỬI CÔ'
       : '🎁 MÓN QUÀ TRI KỶ 20·10';
 
-  const titleSize = Math.max(16, Math.min(23, Math.floor(cardW * 0.035)));
+  const titleSize = Math.max(14, Math.min(22, Math.floor(cardW * 0.034)));
   ctx.textAlign = 'center';
   ctx.font = `bold italic ${titleSize}px "Cormorant Garamond", Georgia, serif`;
   ctx.fillStyle = '#BE123C';
@@ -1398,55 +1420,84 @@ function drawAnimatedLoveLetter(
   ctx.lineTo(w / 2 + cardW * 0.35, divY);
   ctx.stroke();
 
-  // Recipient Name Highlight
-  const recipSize = Math.max(18, Math.min(28, Math.floor(cardW * 0.045)));
-  const recipY = divY + recipSize + 14;
+  // Recipient Name Highlight (auto-fit font so it NEVER overflows card border)
+  const fullRecip = `Kính gửi: ${recipientName?.trim() || 'Người Thương'}`;
+  let recipSize = Math.max(16, Math.min(26, Math.floor(cardW * 0.042)));
   ctx.font = `italic bold ${recipSize}px "Cormorant Garamond", Georgia, serif`;
+  while (ctx.measureText(fullRecip).width > cardW - 70 && recipSize > 12) {
+    recipSize -= 1;
+    ctx.font = `italic bold ${recipSize}px "Cormorant Garamond", Georgia, serif`;
+  }
+  const recipY = divY + recipSize + 12;
   ctx.fillStyle = '#B91C1C';
-  ctx.shadowColor = 'rgba(239, 68, 68, 0.35)';
+  ctx.shadowColor = 'rgba(239, 68, 68, 0.30)';
   ctx.shadowBlur = 6;
-  ctx.fillText(`Kính gửi: ${recipientName || 'Người Thương'}`, w / 2, recipY);
+  ctx.fillText(fullRecip, w / 2, recipY);
   ctx.shadowBlur = 0;
 
-  // Bottom Sign-off Anchor
-  const sigY = cardY + cardH - 30;
+  // Bottom Sign-off Anchor Y
+  const sigY = cardY + cardH - 28;
 
-  // Message Body with Word Wrap and bounds check
-  const msgSize = Math.max(13, Math.min(17, Math.floor(cardW * 0.028)));
+  // Message Body with Paragraph Wrap and Guaranteed Clearance from Sign-off
+  const maxW = cardW - 68;
+  let msgSize = Math.max(12, Math.min(16, Math.floor(cardW * 0.026)));
   ctx.font = `500 ${msgSize}px "Cormorant Garamond", Georgia, serif`;
+  let lineH = Math.round(msgSize * 1.5);
+  let wrappedLines = wrapText(ctx, message, maxW);
+
+  const startMsgY = recipY + msgSize + 14;
+  const availableH = sigY - startMsgY - 16;
+  const maxLines = Math.max(2, Math.min(5, Math.floor(availableH / lineH)));
+
+  // If too many lines, shrink font slightly to fit
+  if (wrappedLines.length > maxLines && msgSize > 12) {
+    msgSize = 12;
+    ctx.font = `500 ${msgSize}px "Cormorant Garamond", Georgia, serif`;
+    lineH = 18;
+    wrappedLines = wrapText(ctx, message, maxW);
+  }
+
   ctx.fillStyle = '#372023';
-
-  const maxW = cardW - 70;
-  const wrappedLines = wrapText(ctx, message, maxW);
-  const lineH = Math.round(msgSize * 1.55);
-  const startMsgY = recipY + msgSize + 16;
-
-  // Calculate available space to ensure message lines NEVER collide with sign-off
-  const availableH = sigY - startMsgY - 14;
-  const maxLines = Math.max(1, Math.min(4, Math.floor(availableH / lineH)));
-
-  for (let l = 0; l < Math.min(maxLines, wrappedLines.length); l++) {
+  const renderLinesCount = Math.min(maxLines, wrappedLines.length);
+  for (let l = 0; l < renderLinesCount; l++) {
     let textLine = wrappedLines[l];
-    if (l === maxLines - 1 && wrappedLines.length > maxLines) {
+    if (l === renderLinesCount - 1 && wrappedLines.length > renderLinesCount) {
       textLine = textLine.replace(/[,.;\s]+$/, '') + '...';
     }
     ctx.fillText(textLine, w / 2, startMsgY + l * lineH);
   }
 
-  // Sender Sign-off: Perfectly measured so prefix and sender name NEVER overlap
+  // Sender Sign-off: Auto-scaled and guarded against colliding with the heart stamp
   const prefix = 'Thân gửi từ: ';
   const sender = senderName?.trim() || 'Người Gửi';
 
-  const prefixFont = `italic 400 ${Math.max(11, Math.min(14, Math.floor(cardW * 0.022)))}px "Plus Jakarta Sans", sans-serif`;
-  const senderFont = `italic bold ${Math.max(14, Math.min(19, Math.floor(cardW * 0.030)))}px "Cormorant Garamond", Georgia, serif`;
+  const prefixFont = `italic 400 ${Math.max(11, Math.min(14, Math.floor(cardW * 0.021)))}px "Plus Jakarta Sans", sans-serif`;
+  let senderFontSize = Math.max(13, Math.min(18, Math.floor(cardW * 0.028)));
+  let senderFont = `italic bold ${senderFontSize}px "Cormorant Garamond", Georgia, serif`;
 
   ctx.font = prefixFont;
   const prefixW = ctx.measureText(prefix).width;
   ctx.font = senderFont;
-  const senderW = ctx.measureText(sender).width;
-  const totalSigW = prefixW + senderW;
+  let senderW = ctx.measureText(sender).width;
 
-  const sigStartX = Math.max(cardX + 24, w / 2 - totalSigW / 2);
+  // Guard against very long sender names
+  const maxAllowedSigW = cardW - 110;
+  while (prefixW + senderW > maxAllowedSigW && senderFontSize > 11) {
+    senderFontSize -= 1;
+    senderFont = `italic bold ${senderFontSize}px "Cormorant Garamond", Georgia, serif`;
+    ctx.font = senderFont;
+    senderW = ctx.measureText(sender).width;
+  }
+
+  const totalSigW = prefixW + senderW;
+  const stampX = cardX + cardW - 38;
+  const stampY = sigY - 2;
+
+  // Keep sign-off clear of the stamp
+  let sigStartX = Math.max(cardX + 24, w / 2 - totalSigW / 2);
+  if (sigStartX + totalSigW > stampX - 22) {
+    sigStartX = stampX - 22 - totalSigW;
+  }
 
   ctx.textAlign = 'left';
   ctx.font = prefixFont;
@@ -1457,9 +1508,9 @@ function drawAnimatedLoveLetter(
   ctx.fillStyle = '#991B1B';
   ctx.fillText(sender, sigStartX + prefixW, sigY);
 
-  // Beating Heart Stamp
-  const stampPulse = Math.sin(progress * Math.PI * 8) * 2.5;
-  drawHeart(ctx, cardX + cardW - 44, cardY + cardH - 34, 18 + stampPulse, '#E11D48');
+  // Beating Heart Stamp cleanly situated
+  const stampPulse = Math.sin(progress * Math.PI * 8) * 2.2;
+  drawHeart(ctx, stampX, stampY - 8, 16 + stampPulse, '#E11D48');
 
   ctx.restore();
 }
@@ -1495,16 +1546,20 @@ export function renderCartoonScene(options: CartoonSceneOptions) {
     drawCafePartyBackground(ctx, width, height, elapsed);
   }
 
-  // 2. Top Event Tag (clean, responsive, non-overlapping)
-  ctx.save();
-  ctx.textAlign = 'center';
-  const tagFontSize = Math.max(11, Math.min(15, Math.floor(width * 0.015)));
-  ctx.font = `bold ${tagFontSize}px "Plus Jakarta Sans", sans-serif`;
-  ctx.fillStyle = '#FFFFFF';
-  ctx.shadowColor = 'rgba(0,0,0,0.85)';
-  ctx.shadowBlur = 8;
-  ctx.fillText('✨ 20 · 10 · NGÀY PHỤ NỮ VIỆT NAM ✨', width / 2, Math.max(26, height * 0.055));
-  ctx.restore();
+  // 2. Top Event Tag (clean, responsive, fades out when letter unfolds to avoid visual overlap)
+  const tagAlpha = progress < 0.44 ? 1 : Math.max(0, 1 - (progress - 0.44) * 8);
+  if (tagAlpha > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = tagAlpha;
+    ctx.textAlign = 'center';
+    const tagFontSize = Math.max(11, Math.min(15, Math.floor(width * 0.015)));
+    ctx.font = `bold ${tagFontSize}px "Plus Jakarta Sans", sans-serif`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+    ctx.shadowBlur = 8;
+    ctx.fillText('✨ 20 · 10 · NGÀY PHỤ NỮ VIỆT NAM ✨', width / 2, Math.max(26, height * 0.055));
+    ctx.restore();
+  }
 
   // Blinking timer
   const isBlinking = Math.floor(elapsed * 2.5) % 9 === 0;

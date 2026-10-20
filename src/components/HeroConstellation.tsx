@@ -89,7 +89,7 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
       {/* Floating Transparent Cutout Flowers (Positioned at deepest layer z-0) */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
         {/* 1. Large Blooming English Rose (Top-Left Floating Luxury Cutout) */}
-        <div className="absolute top-10 left-3 md:left-14 w-44 md:w-60 lg:w-72 aspect-square animate-float-gentle opacity-90 transition-transform duration-700 drop-shadow-[0_15px_30px_rgba(244,114,182,0.18)]">
+        <div className="absolute top-6 sm:top-10 left-2 sm:left-4 md:left-14 w-28 sm:w-44 md:w-60 lg:w-72 aspect-square animate-float-gentle opacity-85 sm:opacity-90 transition-transform duration-700 drop-shadow-[0_15px_30px_rgba(244,114,182,0.18)]">
           <img
             src={roseCutout}
             alt="Đóa hồng Juliet sang trọng"
@@ -103,7 +103,7 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
 
         {/* 2. Full Peony Bloom (Bottom-Right Floating Luxury Cutout) */}
         <div
-          className="absolute bottom-16 right-4 md:right-16 w-48 md:w-64 lg:w-80 aspect-square animate-float-gentle opacity-85 transition-transform duration-700 drop-shadow-[0_15px_35px_rgba(251,191,36,0.14)]"
+          className="absolute bottom-12 sm:bottom-16 right-2 sm:right-4 md:right-16 w-32 sm:w-48 md:w-64 lg:w-80 aspect-square animate-float-gentle opacity-80 sm:opacity-85 transition-transform duration-700 drop-shadow-[0_15px_35px_rgba(251,191,36,0.14)]"
           style={{ animationDelay: '-3.5s' }}
         >
           <img
@@ -233,14 +233,21 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
 
           {/* Central Hero Typography and Action Core - Highest Stacking Priority */}
           <div className="text-center max-w-3xl relative z-50 px-4">
-            {/* Top Interactive Sub-Action / Ambient Trigger */}
-            <div className="flex justify-center mb-6 relative z-50">
+            {/* Creator Badge & Top Interactive Ambient Trigger */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 mb-6 relative z-50">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-rose-400/30 bg-rose-500/10 backdrop-blur-md text-xs font-semibold tracking-wider text-rose-500 shadow-sm">
+                <span className="flex h-2 w-2 rounded-full bg-rose-400 animate-pulse" />
+                <span className="font-mono text-[11px] sm:text-xs uppercase tracking-widest">
+                  Thực hiện bởi NK TECH CLUB
+                </span>
+              </div>
+
               <button
                 onClick={() => {
                   playAffirmationSound();
                   onToggleMusic();
                 }}
-                className={`group flex items-center gap-3 px-4 py-2 rounded-full border text-xs font-medium tracking-wide transition-all duration-300 backdrop-blur-md ${
+                className={`group flex items-center gap-3 px-4 py-1.5 rounded-full border text-xs font-medium tracking-wide transition-all duration-300 backdrop-blur-md ${
                   isDarkTheme
                     ? 'border-white/10 bg-white/5 text-rose-200 hover:bg-white/10 hover:border-rose-400/40'
                     : 'border-rose-200 bg-white/85 text-rose-900 hover:bg-white hover:border-rose-300 shadow-sm'
@@ -256,7 +263,7 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
 
             {/* Marquee Headline - Guaranteed top layer, never covered */}
             <h1
-              className={`relative z-50 font-serif-luxury text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08] text-balance mb-6 transition-colors duration-300 select-none ${
+              className={`relative z-50 font-serif-luxury text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.12] sm:leading-[1.08] text-balance mb-4 sm:mb-6 transition-colors duration-300 select-none ${
                 isDarkTheme
                   ? 'text-transparent bg-clip-text bg-gradient-to-b from-stone-50 via-rose-100 to-rose-300 drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]'
                   : 'text-[#3E1B24] drop-shadow-[0_2px_12px_rgba(255,255,255,0.9)]'
@@ -267,21 +274,21 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
 
             {/* Poetic Subtitle */}
             <p
-              className={`mx-auto max-w-2xl text-base sm:text-lg leading-relaxed font-light mb-9 text-balance ${
+              className={`mx-auto max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed font-light mb-7 sm:mb-9 text-balance px-2 ${
                 isDarkTheme ? 'text-stone-300/85' : 'text-[#684C54]'
               }`}
             >
-              Dành trọn những đóa hoa thơm ngát và tâm tư chân thành nhất gửi trao đến người phụ nữ tuyệt vời nhân ngày 20/10.
+              Một tác phẩm tri ân từ <span className="font-semibold text-rose-400">NK TECH CLUB</span> — Dành trọn những đóa hoa thơm ngát và tâm tư chân thành nhất gửi trao đến người phụ nữ tuyệt vời nhân ngày 20/10.
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto">
               <button
                 onClick={() => {
                   playAffirmationSound();
                   onOpenCardStudio();
                 }}
-                className={`px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wider uppercase transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95 flex items-center gap-2 ${
+                className={`w-full sm:w-auto px-6 sm:px-7 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-semibold tracking-wider uppercase transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2 ${
                   isDarkTheme
                     ? 'bg-stone-100 text-stone-950 hover:bg-white shadow-rose-950/40'
                     : 'bg-[#4A1D28] text-rose-50 hover:bg-[#38131D]'
@@ -296,7 +303,7 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
                   playPluckChime(440, 1.2);
                   onExploreFlowers();
                 }}
-                className={`px-7 py-3 rounded-full text-xs sm:text-sm font-medium tracking-wide transition-all duration-300 border backdrop-blur-md hover:scale-105 active:scale-95 flex items-center gap-2 ${
+                className={`w-full sm:w-auto px-6 sm:px-7 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-medium tracking-wide transition-all duration-300 border backdrop-blur-md hover:scale-105 active:scale-95 flex items-center justify-center gap-2 ${
                   isDarkTheme
                     ? 'border-white/15 bg-white/5 text-stone-200 hover:bg-white/10 hover:border-white/30'
                     : 'border-rose-200/90 bg-white/70 text-[#4A1D28] hover:bg-white shadow-sm'
@@ -305,6 +312,34 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
                 <Film size={14} className="text-rose-400" />
                 <span>Xưởng Hoạt Ảnh Video</span>
               </button>
+            </div>
+
+            {/* Mobile-Only Floral Nodes Horizontal Cards Carousel */}
+            <div className="md:hidden mt-8 -mx-2 px-2 flex items-center gap-2.5 overflow-x-auto no-scrollbar scroll-smooth py-1">
+              {HERO_NODES.map((node) => (
+                <button
+                  key={`mobile-${node.id}`}
+                  onClick={() => {
+                    playAffirmationSound();
+                    onSelectNode(node);
+                  }}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left shrink-0 transition-transform active:scale-95 backdrop-blur-md ${
+                    isDarkTheme
+                      ? 'bg-stone-900/80 border-stone-800 text-stone-200'
+                      : 'bg-white/90 border-rose-100/90 text-stone-800 shadow-sm'
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-rose-400 animate-pulse shrink-0" />
+                  <div>
+                    <div className="font-serif-luxury text-xs font-bold leading-tight text-rose-500">
+                      {node.title}
+                    </div>
+                    <div className="text-[10px] text-stone-400 truncate max-w-[100px]">
+                      {node.flowerName}
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -436,7 +471,7 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
             >
               <ArrowDown size={12} />
             </span>
-            <span className="font-mono text-[11px]">20.10 · Cuộn xuống để xem vườn hoa</span>
+            <span className="font-mono text-[11px]">20.10 · Cuộn xuống trải nghiệm video & thiệp</span>
           </button>
 
           <div className="flex items-center gap-2">
@@ -445,7 +480,7 @@ export const HeroConstellation: React.FC<HeroConstellationProps> = ({
                 isDarkTheme ? 'text-rose-300/80' : 'text-rose-900/80'
               }`}
             >
-              Hương sắc Việt Nam
+              NK TECH CLUB · 20.10
             </span>
             <div className="flex gap-1">
               <span className="h-1 w-5 rounded-full bg-rose-400" />

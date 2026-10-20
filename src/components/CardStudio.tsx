@@ -518,7 +518,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-rose-500">
                   5. Khắc Dấu Sáp Niêm Phong
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {['20·10', 'Yêu Thương', 'Tri Ân', '♥ Hạnh Phúc'].map((mono) => (
                     <button
                       key={mono}
@@ -542,9 +542,9 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             </div>
 
             {/* Studio Action Buttons */}
-            <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row items-center gap-3 ${
+            <div className={`mt-8 pt-6 border-t flex flex-col sm:flex-row items-center gap-3 ${
               isDarkTheme ? 'border-stone-800' : 'border-rose-100'
-            }">
+            }`}>
               {/* PRIMARY EXPORT BUTTON: Downloads image to PC or Phone! */}
               <button
                 type="button"
@@ -597,7 +597,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             <div
               ref={cardRef}
               id="printable-card"
-              className={`relative w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl transition-all duration-500 border ${currentTheme.bg} ${currentTheme.border}`}
+              className={`relative w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl transition-all duration-500 border overflow-hidden ${currentTheme.bg} ${currentTheme.border}`}
             >
               {/* === FLOWERS IN DEEPEST LAYER (z-0) - Gracefully positioned in background === */}
               {floralDeco === 'rose' && (

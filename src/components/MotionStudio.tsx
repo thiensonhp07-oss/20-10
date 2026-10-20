@@ -141,7 +141,6 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
 
   // Playback & Export State
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [currentTime, setCurrentTime] = useState<number>(0);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportProgress, setExportProgress] = useState<number>(0);
   const [exportedVideoUrl, setExportedVideoUrl] = useState<string | null>(null);
@@ -150,15 +149,53 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(performance.now());
+  const lastTimeRef = useRef<number>(performance.now());
+  const elapsedRef = useRef<number>(0);
+  const isPlayingRef = useRef<boolean>(true);
 
-  // When switching templates, automatically update presets
+  const scrubberTrackRef = useRef<HTMLDivElement | null>(null);
+  const progressFillRef = useRef<HTMLDivElement | null>(null);
+  const timeDisplayRef = useRef<HTMLSpanElement | null>(null);
+
+  // Synchronize render params continuously so typing NEVER resets playback or causes stutter
+  const renderParamsRef = useRef({
+    templateId: selectedTemplateId,
+    recipientName,
+    senderName,
+    message,
+    durationSec,
+    showConfetti,
+    showHearts,
+  });
+
+  useEffect(() => {
+    renderParamsRef.current = {
+      templateId: selectedTemplateId,
+      recipientName,
+      senderName,
+      message,
+      durationSec,
+      showConfetti,
+      showHearts,
+    };
+  }, [selectedTemplateId, recipientName, senderName, message, durationSec, showConfetti, showHearts]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    lastTimeRef.current = performance.now();
+  }, [isPlaying]);
+
+  // When switching templates, automatically update presets and rewind smoothly
   const handleSelectTemplate = (template: MotionTemplate) => {
     setSelectedTemplateId(template.id);
     setRecipientName(template.defaultRecipient);
     setSenderName(template.defaultSender);
     setMessage(template.defaultMessage);
+    elapsedRef.current = 0;
+    lastTimeRef.current = performance.now();
     startTimeRef.current = performance.now();
     setIsPlaying(true);
+    isPlayingRef.current = true;
     playPluckChime(587.33, 0.9, 0.05);
   };
 
@@ -168,7 +205,7 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
     return { width: 1080, height: 1080 };
   };
 
-  // 60 FPS Procedural Cartoon Animation Render Loop
+  // 60 FPS Procedural Cartoon Animation Render Loop (Ultra Smooth, Zero React Re-render Lag)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -209,16 +246,33 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
     }
 
     let isRunning = true;
-    startTimeRef.current = performance.now();
+    lastTimeRef.current = performance.now();
 
     const render = (now: number) => {
       if (!isRunning) return;
 
-      const elapsed = ((now - startTimeRef.current) / 1000) % durationSec;
-      setCurrentTime(elapsed);
-      const progress = elapsed / durationSec; // 0 to 1
+      const delta = Math.min(0.1, (now - lastTimeRef.current) / 1000);
+      lastTimeRef.current = now;
+
+      const dur = renderParamsRef.current.durationSec;
+      if (isPlayingRef.current) {
+        elapsedRef.current = (elapsedRef.current + delta) % dur;
+      }
+
+      const elapsed = elapsedRef.current;
+      const progress = dur > 0 ? elapsed / dur : 0; // 0 to 1
+
+      // Direct DOM progress updates to completely eliminate 60fps React re-render overhead!
+      if (progressFillRef.current) {
+        progressFillRef.current.style.width = `${Math.min(100, Math.max(0, progress * 100))}%`;
+      }
+      if (timeDisplayRef.current) {
+        timeDisplayRef.current.textContent = `${elapsed.toFixed(1)}s / ${dur.toFixed(0)}s`;
+      }
 
       ctx.clearRect(0, 0, width, height);
+
+      const params = renderParamsRef.current;
 
       // 1. Render Cartoon Scene with moving characters & unfolding love letter
       renderCartoonScene({
@@ -227,13 +281,13 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
         height,
         progress,
         elapsed,
-        duration: durationSec,
-        templateId: selectedTemplateId as 'couple-romance' | 'mom-child' | 'teacher-student' | 'sisters-bff',
-        recipientName,
-        senderName,
-        message,
-        showConfetti,
-        showHearts,
+        duration: dur,
+        templateId: params.templateId as 'couple-romance' | 'mom-child' | 'teacher-student' | 'sisters-bff',
+        recipientName: params.recipientName,
+        senderName: params.senderName,
+        message: params.message,
+        showConfetti: params.showConfetti,
+        showHearts: params.showHearts,
       });
 
       // 2. Foreground 3D Petals & Sparkle Drift
@@ -261,9 +315,7 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
         ctx.restore();
       }
 
-      if (isPlaying) {
-        animFrameRef.current = requestAnimationFrame(render);
-      }
+      animFrameRef.current = requestAnimationFrame(render);
     };
 
     animFrameRef.current = requestAnimationFrame(render);
@@ -274,22 +326,31 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
         cancelAnimationFrame(animFrameRef.current);
       }
     };
-  }, [
-    selectedTemplateId,
-    recipientName,
-    senderName,
-    message,
-    aspectRatio,
-    durationSec,
-    showConfetti,
-    showHearts,
-    isPlaying,
-  ]);
+  }, [aspectRatio, selectedTemplateId]);
 
-  // Replay
+  // Scrub timeline to specified position
+  const handleScrub = (clientX: number) => {
+    if (!scrubberTrackRef.current) return;
+    const rect = scrubberTrackRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const newElapsed = ratio * durationSec;
+    elapsedRef.current = newElapsed;
+    lastTimeRef.current = performance.now();
+    if (progressFillRef.current) {
+      progressFillRef.current.style.width = `${ratio * 100}%`;
+    }
+    if (timeDisplayRef.current) {
+      timeDisplayRef.current.textContent = `${newElapsed.toFixed(1)}s / ${durationSec.toFixed(0)}s`;
+    }
+  };
+
+  // Replay from beginning
   const handleReplay = () => {
+    elapsedRef.current = 0;
+    lastTimeRef.current = performance.now();
     startTimeRef.current = performance.now();
     setIsPlaying(true);
+    isPlayingRef.current = true;
     playAffirmationSound();
   };
 
@@ -691,7 +752,7 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
                             : 'border-rose-200 bg-white text-stone-700'
                         }`}
                       >
-                        {ratio === '16:9' ? '16:9 (Ngang)' : ratio === '9:16' ? '9:16' : '1:1'}
+                        {ratio}
                       </button>
                     ))}
                   </div>
@@ -787,8 +848,8 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
                 aspectRatio === '16:9'
                   ? 'w-full aspect-[16/9]'
                   : aspectRatio === '9:16'
-                  ? 'w-[320px] sm:w-[360px] aspect-[9/16]'
-                  : 'w-[360px] sm:w-[420px] aspect-square'
+                  ? 'w-full max-w-[320px] sm:max-w-[360px] aspect-[9/16]'
+                  : 'w-full max-w-[340px] sm:max-w-[420px] aspect-square'
               } ${
                 isDarkTheme
                   ? 'border-rose-900/40 bg-black shadow-rose-950/40'
@@ -830,44 +891,65 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
 
             {/* Playback Controls Bar */}
             <div
-              className={`mt-4 w-full rounded-2xl px-5 py-3 border flex items-center justify-between gap-4 backdrop-blur-md ${
+              className={`mt-4 w-full rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3 border flex items-center justify-between gap-2.5 sm:gap-4 backdrop-blur-md ${
                 isDarkTheme
                   ? 'bg-stone-900/70 border-stone-800'
                   : 'bg-white/90 border-rose-200/80 shadow-sm'
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsPlaying((p) => !p)}
-                  className="h-9 w-9 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-md transition-transform active:scale-95"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-md transition-transform active:scale-95"
                 >
-                  {isPlaying ? <Pause size={16} /> : <Play size={16} className="translate-x-0.5" />}
+                  {isPlaying ? <Pause size={15} /> : <Play size={15} className="translate-x-0.5" />}
                 </button>
                 <button
                   type="button"
                   onClick={handleReplay}
-                  className={`h-9 w-9 rounded-full border flex items-center justify-center transition-colors ${
+                  className={`h-8 w-8 sm:h-9 sm:w-9 rounded-full border flex items-center justify-center transition-colors ${
                     isDarkTheme
                       ? 'border-stone-700 hover:bg-stone-800 text-stone-300'
                       : 'border-rose-200 hover:bg-rose-50 text-stone-700'
                   }`}
                   title="Phát lại từ đầu"
                 >
-                  <RotateCcw size={15} />
+                  <RotateCcw size={14} />
                 </button>
               </div>
 
-              {/* Timeline scrubber bar */}
-              <div className="flex-1 flex items-center gap-2">
-                <div className="w-full h-2 rounded-full bg-stone-300/40 dark:bg-stone-700/60 overflow-hidden relative">
-                  <div
-                    className="h-full bg-gradient-to-r from-rose-400 to-rose-600 rounded-full transition-all duration-75"
-                    style={{ width: `${(currentTime / durationSec) * 100}%` }}
-                  />
+              {/* Timeline scrubber bar (Interactive Click & Drag) */}
+              <div className="flex-1 flex items-center gap-2 min-w-0">
+                <div
+                  ref={scrubberTrackRef}
+                  onPointerDown={(e) => {
+                    handleScrub(e.clientX);
+                    const onPointerMove = (moveEvent: PointerEvent) => {
+                      handleScrub(moveEvent.clientX);
+                    };
+                    const onPointerUp = () => {
+                      window.removeEventListener('pointermove', onPointerMove);
+                      window.removeEventListener('pointerup', onPointerUp);
+                    };
+                    window.addEventListener('pointermove', onPointerMove);
+                    window.addEventListener('pointerup', onPointerUp);
+                  }}
+                  className="w-full h-3.5 flex items-center cursor-pointer group select-none py-1"
+                  title="Kéo hoặc nhấp để tua nhanh / xem lại từng giây"
+                >
+                  <div className="w-full h-2 rounded-full bg-stone-300/40 dark:bg-stone-700/60 overflow-hidden relative group-hover:h-2.5 transition-all">
+                    <div
+                      ref={progressFillRef}
+                      className="h-full bg-gradient-to-r from-rose-400 via-pink-500 to-rose-600 rounded-full transition-none w-0"
+                    />
+                  </div>
                 </div>
-                <span className="font-mono text-[11px] text-stone-500 shrink-0">
-                  {currentTime.toFixed(1)}s / {durationSec.toFixed(0)}s
+                <span
+                  ref={timeDisplayRef}
+                  className="font-mono text-[10px] sm:text-[11px] text-stone-500 shrink-0 select-none tabular-nums"
+                >
+                  0.0s / {durationSec.toFixed(0)}s
                 </span>
               </div>
 
@@ -875,14 +957,14 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
               <button
                 type="button"
                 onClick={handleSaveSnapshot}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center gap-1 sm:gap-1.5 transition-all shrink-0 ${
                   isDarkTheme
                     ? 'border-stone-700 bg-stone-800 text-stone-300 hover:text-white'
                     : 'border-rose-200 bg-white text-stone-700 hover:border-rose-400'
                 }`}
                 title="Tải ảnh chụp khoảnh khắc hiện tại"
               >
-                <Camera size={14} className="text-rose-500" />
+                <Camera size={13} className="text-rose-500" />
                 <span className="hidden sm:inline">Chụp Ảnh</span>
               </button>
             </div>
@@ -893,17 +975,18 @@ export const MotionStudio: React.FC<MotionStudioProps> = ({ isDarkTheme }) => {
                 type="button"
                 onClick={handleExportVideo}
                 disabled={isExporting}
-                className="flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-600 text-white font-semibold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-rose-500/25 transition-all transform active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed"
+                className="flex-1 py-3 sm:py-3.5 px-4 sm:px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-600 text-white font-semibold text-xs sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-rose-500/25 transition-all transform active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed text-center"
               >
                 {isExporting ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={18} className="animate-spin shrink-0" />
                     <span>Đang thu video hoạt hình... {exportProgress}%</span>
                   </>
                 ) : (
                   <>
-                    <Download size={18} />
-                    <span>Tải Video Hoạt Hình 20/10 Về Máy (.mp4 / .webm)</span>
+                    <Download size={18} className="shrink-0" />
+                    <span className="hidden sm:inline">Tải Video Hoạt Hình 20/10 Về Máy (.mp4 / .webm)</span>
+                    <span className="sm:hidden">Tải Video Hoạt Hình (.mp4 / .webm)</span>
                   </>
                 )}
               </button>

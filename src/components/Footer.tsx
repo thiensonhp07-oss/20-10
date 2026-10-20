@@ -27,14 +27,18 @@ export const Footer: React.FC<FooterProps> = ({ isDarkTheme }) => {
           <p className="text-xs font-light">
             Tôn vinh vẻ đẹp, sự dịu dàng và bản lĩnh người Phụ nữ Việt Nam.
           </p>
+          <p className="text-xs font-medium text-rose-500 mt-1.5 flex items-center justify-center md:justify-start gap-1.5">
+            <span>Dự án được thực hiện bởi</span>
+            <span className="font-semibold underline underline-offset-2">NK TECH CLUB</span>
+          </p>
         </div>
 
         <div className="flex items-center gap-6 text-xs font-medium">
           <a href="#ton-vinh" className="hover:text-rose-500 transition-colors">
             Tôn Vinh
           </a>
-          <a href="#vuon-hoa" className="hover:text-rose-500 transition-colors">
-            Vườn Hoa
+          <a href="#hoat-anh" className="hover:text-rose-500 transition-colors">
+            Hoạt Ảnh Video
           </a>
           <a href="#thiep-chuc" className="hover:text-rose-500 transition-colors">
             Thiệp Chúc
